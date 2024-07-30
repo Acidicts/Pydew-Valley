@@ -1,4 +1,5 @@
 import pygame
+
 from settings import *
 from support import *
 from timer import Timer
@@ -32,6 +33,8 @@ class Player(pygame.sprite.Sprite):
             'seed_switch': Timer(200),
         }
 
+        self.target_pos = self.get_target_pos()
+
         self.tools = ['hoe', 'axe', 'water']
         self.tool_index = 0
         self.selected_tool = self.tools[self.tool_index]
@@ -46,7 +49,9 @@ class Player(pygame.sprite.Sprite):
         if self.selected_tool == "hoe":
             pass
         elif self.selected_tool == "axe":
-            pass
+            for tree in self.tree_sprites.sprites():
+                if tree.rect.collidepoint(self.target_pos):
+                    tree.damage()
         elif self.selected_tool == "water":
             pass
 
@@ -54,8 +59,8 @@ class Player(pygame.sprite.Sprite):
         pass
 
     def get_target_pos(self):
-        target_pos = self.rect.center + PLAYER_TOOL_OFFSET[self.status.split('_')[0]]
-        return target_pos
+        self.target_pos = self.rect.center + PLAYER_TOOL_OFFSET[self.status.split('_')[0]]
+        return self.target_pos
 
     def import_assets(self):
         self.animations = {

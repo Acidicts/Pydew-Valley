@@ -5,6 +5,9 @@ from settings import *
 class Menu:
     def __init__(self, player, toggle_menu):
 
+        self.main_rect = None
+        self.menu_top = None
+
         self.player = player
         self.toggle_menu = toggle_menu
         self.display_surface = pygame.display.get_surface()
@@ -22,12 +25,26 @@ class Menu:
 
         self.setup()
 
+    def display_money(self):
+        text_surf = self.font.render('Money: ${}'.format(self.player.money), False, 'Black')
+        text_rect = text_surf.get_rect(midbottom=(SCREEN_WIDTH/2 - text_surf.get_width() + 5, self.menu_top + 30))
+        text_box = pygame.Rect(SCREEN_WIDTH / 2 - self.width / 2,  self.menu_top, self.width, 30)
+
+        pygame.draw.rect(self.display_surface, 'white', text_box, 0, 6)
+        self.display_surface.blit(text_surf, text_rect)
+
     def setup(self):
         self.text_surfs = []
+        self.total_height = 0
+
         for item in self.options:
-            text_surf = self.font.render(item, True, 'Black')
+            text_surf = self.font.render(item, False, 'Black')
             self.text_surfs.append(text_surf)
             self.total_height += text_surf.get_height() + (self.padding * 2)
+
+        self.total_height += (len(self.text_surfs) - 1) * self.space
+        self.menu_top = SCREEN_HEIGHT / 2 - self.total_height / 2
+        self.main_rect = pygame.Rect(SCREEN_WIDTH / 2 - self.width / 2,  self.menu_top, self.width, self.total_height)
 
     def inputs(self):
         keys = pygame.key.get_pressed()
@@ -35,7 +52,17 @@ class Menu:
         if keys[pygame.K_ESCAPE]:
             self.toggle_menu()
 
+    def show_entry(self, text_surf, amount, top):
+        bg_rect = pygame.Rect(self.main_rect.left, top, self.width, text_surf.get_height() + (self.padding * 2))
+        pygame.draw.rect(self.display_surface, 'white', bg_rect, 0, 4)
+
     def update(self):
         self.inputs()
+        pygame.draw.rect(self.display_surface, 'red', self.main_rect, 0, 6)
         for text_index, text_surf in enumerate(self.text_surfs):
+            top = self.main_rect.top + text_index * (text_surf.get_height() + (self.padding * 2) * self.space)
+            self.show_entry(text_surf, 0, top)
+
             self.display_surface.blit(text_surf, (100, text_index * 50))
+
+        self.display_money()

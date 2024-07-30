@@ -4,8 +4,9 @@ from pytmx.util_pygame import load_pygame
 from settings import *
 from player import Player
 from overlay import Overlay
-from sprites import Generic, Water, WildFlower, Tree
 from support import import_folder
+from transition import Transition
+from sprites import Generic, Water, WildFlower, Tree, Interaction
 
 
 class Level:
@@ -17,11 +18,14 @@ class Level:
         self.collision_sprites = pygame.sprite.Group()
         self.tree_sprites = pygame.sprite.Group()
 
+        self.interaction_sprites = pygame.sprite.Group()
+
         self.player = None
 
         self.setup()
 
         self.overlay = Overlay(self.player)
+        self.transition = Transition(self.reset, self.player)
 
     # noinspection PyTypeChecker
     def setup(self):
@@ -40,17 +44,28 @@ class Level:
                 Generic((x * TILE_SIZE, y * TILE_SIZE), surf, (self.all_sprites, self.collision_sprites))
 
         for obj in tmx_data.get_layer_by_name('Trees'):
-            Tree((obj.x, obj.y), obj.image, (self.all_sprites, self.collision_sprites, self.tree_sprites), obj.name, self)
+            Tree((obj.x, obj.y),
+                 obj.image,
+                 (self.all_sprites, self.collision_sprites, self.tree_sprites),
+                 obj.name,
+                 self, self.player_add)
 
         for obj in tmx_data.get_layer_by_name('Decoration'):
             WildFlower((obj.x, obj.y), obj.image, (self.all_sprites, self.collision_sprites))
 
-        for obj in tmx_data.get_layer_by_name('Player'):
-            if obj.name == 'Start':
-                self.player = Player((obj.x, obj.y), (self.all_sprites,), self.collision_sprites, self.tree_sprites)
-
         for x, y, surf in tmx_data.get_layer_by_name('Collision').tiles():
             Generic((x * TILE_SIZE, y * TILE_SIZE), surf, self.collision_sprites, self.tree_sprites)
+
+        for obj in tmx_data.get_layer_by_name('Player'):
+            if obj.name == 'Start':
+                self.player = Player((obj.x, obj.y),
+                                     (self.all_sprites,),
+                                     self.collision_sprites,
+                                     self.tree_sprites,
+                                     self.interaction_sprites,)
+
+            if obj.name == "Bed":
+                Interaction((obj.x, obj.y), (obj.width, obj.height), self.interaction_sprites, "Bed")
 
         Generic(pos=(0, 0), surf=pygame.image.load(
             BASE_PATH + 'graphics/world/ground.png'),
@@ -63,6 +78,15 @@ class Level:
         for x, y, surf in tmx_data.get_layer_by_name('Water').tiles():
             Water((x * TILE_SIZE, y * TILE_SIZE), water_frames, (self.all_sprites,))
 
+    def player_add(self, item):
+        self.player.item_inventory[item] += 1
+
+    def reset(self):
+        for tree in self.tree_sprites.sprites():
+            for apple in tree.apple_sprites.sprites():
+                apple.kill()
+            tree.create_fruit()
+
     def run(self, dt):
         self.display_surface.fill('black')
 
@@ -70,6 +94,9 @@ class Level:
         self.all_sprites.update(dt)
 
         self.overlay.display()
+
+        if self.player.sleep:
+            self.transition.play()
 
 
 class Camera(pygame.sprite.Group):

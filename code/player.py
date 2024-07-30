@@ -13,9 +13,10 @@ class Player(pygame.sprite.Sprite):
 
         self.status = 'down_idle'
         self.frame_index = 0
-        self.image = self.animations[self.status][self.frame_index]
 
+        self.image = self.animations[self.status][self.frame_index]
         self.rect = self.image.get_rect(center=pos)
+        self.z = LAYERS['main']
 
         self.direction = pygame.math.Vector2()
         self.pos = pygame.math.Vector2(self.rect.center)

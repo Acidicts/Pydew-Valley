@@ -6,7 +6,7 @@ from timer import Timer
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, group, collision_sprites, tree_sprites, interaction, soil_layer):
+    def __init__(self, pos, group, collision_sprites, tree_sprites, interaction, soil_layer, toggle_shop):
         super().__init__(group)
 
         self.animations = None
@@ -43,6 +43,11 @@ class Player(pygame.sprite.Sprite):
         self.seed_index = 0
         self.selected_seed = self.seeds[self.seed_index]
 
+        self.seed_inventory = {
+            'corn': 5,
+            'tomato': 5,
+        }
+
         self.item_inventory = {
             'wood': 0,
             'apple': 0,
@@ -58,6 +63,8 @@ class Player(pygame.sprite.Sprite):
 
         self.soil_layer = soil_layer
 
+        self.toggle_shop = toggle_shop
+
     def use_tool(self):
         if self.selected_tool == "hoe":
             self.soil_layer.get_hit(self.target_pos)
@@ -69,7 +76,9 @@ class Player(pygame.sprite.Sprite):
             self.soil_layer.water(self.target_pos)
 
     def use_seed(self):
-        self.soil_layer.plant_seed(self.target_pos, self.selected_seed)
+        if self.seed_inventory[self.selected_seed] > 0:
+            self.soil_layer.plant_seed(self.target_pos, self.selected_seed)
+            self.seed_inventory[self.selected_seed] -= 1
 
     def get_target_pos(self):
         self.target_pos = self.rect.center + PLAYER_TOOL_OFFSET[self.status.split('_')[0]]
@@ -134,8 +143,8 @@ class Player(pygame.sprite.Sprite):
             collided_interaction_sprite = pygame.sprite.spritecollide(self, self.interaction, False)
 
             if collided_interaction_sprite:
-                if collided_interaction_sprite[0].name == 'Trade':
-                    pass
+                if collided_interaction_sprite[0].name == 'Trader':
+                    self.toggle_shop()
                 elif collided_interaction_sprite[0].name == 'Bed':
                     self.status = 'left_idle'
                     self.sleep = True
@@ -178,6 +187,7 @@ class Player(pygame.sprite.Sprite):
 
                         self.rect.centerx = self.hitbox.centerx
                         self.pos.x = self.hitbox.centerx
+                        break
 
                     if direction == 'vertical':
                         if self.direction.y > 0:  # Moving down
@@ -187,6 +197,7 @@ class Player(pygame.sprite.Sprite):
                             self.hitbox.top = sprite.hitbox.bottom
                         self.rect.centery = self.hitbox.centery
                         self.pos.y = self.hitbox.centery
+                        break
 
     def move(self, dt):
         if self.direction.magnitude() > 0:

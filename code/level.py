@@ -1,9 +1,10 @@
 import pygame
 from pytmx.util_pygame import load_pygame
 
-from sky import Rain
+from menu import Menu
 from settings import *
 from player import Player
+from sky import Rain, Sky
 from soil import SoilLayer
 from random import randint
 from overlay import Overlay
@@ -36,6 +37,10 @@ class Level:
         self.rain = Rain(self.all_sprites)
         self.raining = randint(0, 10) > 3
         self.soil_layer.raining = self.raining
+        self.sky = Sky()
+
+        self.menu = Menu(self.player, self.player.toggle_shop)
+        self.shop_active = False
 
     # noinspection PyTypeChecker
     def setup(self):
@@ -73,10 +78,14 @@ class Level:
                                      self.collision_sprites,
                                      self.tree_sprites,
                                      self.interaction_sprites,
-                                     self.soil_layer,)
+                                     self.soil_layer,
+                                     self.toggle_shop,)
 
             if obj.name == "Bed":
-                Interaction((obj.x, obj.y), (obj.width, obj.height), self.interaction_sprites, "Bed")
+                Interaction((obj.x, obj.y), (obj.width, obj.height), self.interaction_sprites, obj.name)
+
+            if obj.name == 'Trader':
+                Interaction((obj.x, obj.y), (obj.width, obj.height), self.interaction_sprites, obj.name)
 
         Generic(pos=(0, 0), surf=pygame.image.load(
             BASE_PATH + 'graphics/world/ground.png'),
@@ -92,6 +101,9 @@ class Level:
 
     def player_add(self, item):
         self.player.item_inventory[item] += 1
+
+    def toggle_shop(self):
+        self.shop_active = not self.shop_active
 
     def reset(self):
         self.soil_layer.update_plants()
@@ -111,26 +123,39 @@ class Level:
                 apple.kill()
             tree.create_fruit()
 
+        self.sky.start_color = [255, 255, 255]
+
     def plant_collision(self):
         if self.soil_layer.plant_sprites:
             for plant in self.soil_layer.plant_sprites.sprites():
                 if plant.harvestable and plant.rect.colliderect(self.player.hitbox):
                     self.player.item_inventory[plant.plant_type] += 1
+
+                    x = plant.rect.centerx // TILE_SIZE
+                    y = plant.rect.centery // TILE_SIZE
+
+                    self.soil_layer.grid[y][x].remove("P")
+
                     Particle(plant.rect.topleft, plant.image, (self.all_sprites,), LAYERS['main'], 500)
                     plant.kill()
 
     def run(self, dt):
+
         self.display_surface.fill('black')
-
         self.all_sprites.custom_draw(self.player)
-        self.all_sprites.update(dt, self.all_sprites.offset)
 
-        self.plant_collision()
-
-        if self.raining:
-            self.rain.update()
+        if self.shop_active:
+            self.menu.update()
+        else:
+            self.all_sprites.update(dt, self.all_sprites.offset)
+            self.plant_collision()
 
         self.overlay.display()
+
+        if self.raining and not self.shop_active:
+            self.rain.update()
+
+        self.sky.display(dt)
 
         if self.player.sleep:
             self.transition.play()

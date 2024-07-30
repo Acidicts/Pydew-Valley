@@ -1,10 +1,12 @@
+import os
 from pygame.math import Vector2
 
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 TILE_SIZE = 64
 
-BASE_PATH = 'F:/PycharmProject/Pydew Valley/'
+BASE_PATH = os.path.abspath(__file__).replace('\\', '/').replace('code/settings.py', '')
+print(BASE_PATH)
 
 OVERLAY_POSITIONS = {
 	'tool': (40, SCREEN_HEIGHT - 15),

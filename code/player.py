@@ -54,6 +54,7 @@ class Player(pygame.sprite.Sprite):
         self.interaction = interaction
 
         self.sleep = False
+        self.draw = True
 
         self.soil_layer = soil_layer
 
@@ -65,10 +66,10 @@ class Player(pygame.sprite.Sprite):
                 if tree.rect.collidepoint(self.target_pos):
                     tree.damage()
         elif self.selected_tool == "water":
-            pass
+            self.soil_layer.water(self.target_pos)
 
     def use_seed(self):
-        pass
+        self.soil_layer.plant_seed(self.target_pos, self.selected_seed)
 
     def get_target_pos(self):
         self.target_pos = self.rect.center + PLAYER_TOOL_OFFSET[self.status.split('_')[0]]
@@ -201,7 +202,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.centery = self.hitbox.centery
         self.collision('vertical')
 
-    def update(self, dt):
+    def update(self, dt, offset=(0, 0)):
         self.input()
         self.update_timers()
 

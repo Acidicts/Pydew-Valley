@@ -7,7 +7,7 @@ from settings import *
 class Game:
 	def __init__(self):
 		pygame.init()
-		pygame.display.set_caption('Sprout land')
+		pygame.display.set_caption('Pydew Valley')
 
 		self.win = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
@@ -16,6 +16,8 @@ class Game:
 
 	def run(self):
 		while True:
+			pygame.display.set_caption('Pydew Valley FPS: {}'.format(int(self.clock.get_fps())))
+
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
 					pygame.quit()

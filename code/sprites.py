@@ -7,7 +7,7 @@ from random import randint, choice
 
 class Generic(pygame.sprite.Sprite):
     # noinspection PyTypeChecker
-    def __init__(self, pos, surf, groups, z=LAYERS['main']):
+    def __init__(self, pos, surf, groups, z=LAYERS['main'], draw=False):
         super().__init__(groups)
 
         self.image = surf
@@ -16,6 +16,12 @@ class Generic(pygame.sprite.Sprite):
 
         self.hitbox = self.rect.copy().inflate(-self.rect.width * 0.2, -self.rect.height * 0.75)
 
+        self.draw = True
+        self.override = draw
+
+    def update(self, dt, offset):
+        screen_rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+
 
 class Interaction(Generic):
     def __init__(self, pos, size, groups, name):
@@ -23,7 +29,6 @@ class Interaction(Generic):
         super().__init__(pos, surf, groups)
 
         self.name = name
-
 
 
 class Water(Generic):
@@ -38,7 +43,7 @@ class Water(Generic):
 
         self.image = self.frames[int(self.frame_index) % len(self.frames)]
 
-    def update(self, dt):
+    def update(self, dt, offset=(0, 0)):
         self.animate(dt)
 
 
@@ -61,7 +66,7 @@ class Particle(Generic):
         new_surf.set_colorkey((0, 0, 0))
         self.image = new_surf
 
-    def update(self, dt):
+    def update(self, dt, offset=(0, 0)):
         current_time = pygame.time.get_ticks()
         time = self.start_time - current_time
         fade = time / self.duration * 255
@@ -113,7 +118,7 @@ class Tree(Generic):
             self.alive = False
             self.player_add('wood')
 
-    def update(self, dt):
+    def update(self, dt, offset=(0, 0)):
         if self.alive:
             self.check_death()
 

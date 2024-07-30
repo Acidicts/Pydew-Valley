@@ -1,10 +1,13 @@
 import pygame
 from pytmx.util_pygame import load_pygame
 
+from sky import Rain
 from settings import *
 from player import Player
-from overlay import Overlay
 from soil import SoilLayer
+from random import randint
+from overlay import Overlay
+from sprites import Particle
 from support import import_folder
 from transition import Transition
 from sprites import Generic, Water, WildFlower, Tree, Interaction
@@ -23,12 +26,16 @@ class Level:
 
         self.player = None
 
-        self.soil_layer = SoilLayer(self.all_sprites)
+        self.soil_layer = SoilLayer(self.all_sprites, self.collision_sprites)
 
         self.setup()
 
         self.overlay = Overlay(self.player)
         self.transition = Transition(self.reset, self.player)
+
+        self.rain = Rain(self.all_sprites)
+        self.raining = randint(0, 10) > 3
+        self.soil_layer.raining = self.raining
 
     # noinspection PyTypeChecker
     def setup(self):
@@ -36,15 +43,15 @@ class Level:
 
         for layer in ['HouseFloor', 'HouseFurnitureBottom']:
             for x, y, surf in tmx_data.get_layer_by_name(layer).tiles():
-                Generic((x * TILE_SIZE, y * TILE_SIZE), surf, (self.all_sprites,), LAYERS['house bottom'])
+                Generic((x * TILE_SIZE, y * TILE_SIZE), surf, (self.all_sprites,), LAYERS['house bottom'], True)
 
         for layer in ['HouseWalls', 'HouseFurnitureTop']:
             for x, y, surf in tmx_data.get_layer_by_name(layer).tiles():
-                Generic((x * TILE_SIZE, y * TILE_SIZE), surf, (self.all_sprites,), LAYERS['main'])
+                Generic((x * TILE_SIZE, y * TILE_SIZE), surf, (self.all_sprites,), LAYERS['main'], True)
 
         for layer in ['Fence']:
             for x, y, surf in tmx_data.get_layer_by_name(layer).tiles():
-                Generic((x * TILE_SIZE, y * TILE_SIZE), surf, (self.all_sprites, self.collision_sprites))
+                Generic((x * TILE_SIZE, y * TILE_SIZE), surf, (self.all_sprites, self.collision_sprites), True)
 
         for obj in tmx_data.get_layer_by_name('Trees'):
             Tree((obj.x, obj.y),
@@ -74,7 +81,8 @@ class Level:
         Generic(pos=(0, 0), surf=pygame.image.load(
             BASE_PATH + 'graphics/world/ground.png'),
                 groups=(self.all_sprites,),
-                z=LAYERS['ground']
+                z=LAYERS['ground'],
+                draw=True,
                 )
 
         water_frames = import_folder(BASE_PATH + 'graphics/water/')
@@ -86,21 +94,49 @@ class Level:
         self.player.item_inventory[item] += 1
 
     def reset(self):
+        self.soil_layer.update_plants()
+        self.soil_layer.remove_water()
+
+        self.raining = randint(0, 10) > 7
+        self.soil_layer.raining = self.raining
+
+        for sprite in self.all_sprites.sprites():
+            sprite.draw = False
+
+        if self.raining:
+            self.soil_layer.water_all()
+
         for tree in self.tree_sprites.sprites():
             for apple in tree.apple_sprites.sprites():
                 apple.kill()
             tree.create_fruit()
 
+    def plant_collision(self):
+        if self.soil_layer.plant_sprites:
+            for plant in self.soil_layer.plant_sprites.sprites():
+                if plant.harvestable and plant.rect.colliderect(self.player.hitbox):
+                    self.player.item_inventory[plant.plant_type] += 1
+                    Particle(plant.rect.topleft, plant.image, (self.all_sprites,), LAYERS['main'], 500)
+                    plant.kill()
+
     def run(self, dt):
         self.display_surface.fill('black')
 
         self.all_sprites.custom_draw(self.player)
-        self.all_sprites.update(dt)
+        self.all_sprites.update(dt, self.all_sprites.offset)
+
+        self.plant_collision()
+
+        if self.raining:
+            self.rain.update()
 
         self.overlay.display()
 
         if self.player.sleep:
             self.transition.play()
+        else:
+            for sprite in self.all_sprites.sprites():
+                sprite.draw = True
 
 
 class Camera(pygame.sprite.Group):
@@ -116,7 +152,7 @@ class Camera(pygame.sprite.Group):
 
         for layer in LAYERS.values():
             for sprite in sorted(self.sprites(), key=lambda sprit: sprit.rect.centery):
-                if sprite.z == layer:
+                if sprite.z == layer and sprite.draw:
                     offset_rect = sprite.rect.copy()
                     offset_rect.center -= self.offset
                     self.surf.blit(sprite.image, offset_rect)

@@ -144,12 +144,6 @@ class Level:
         self.display_surface.fill('black')
         self.all_sprites.custom_draw(self.player)
 
-        if self.shop_active:
-            self.menu.update()
-        else:
-            self.all_sprites.update(dt, self.all_sprites.offset)
-            self.plant_collision()
-
         self.overlay.display()
 
         if self.raining and not self.shop_active:
@@ -162,6 +156,12 @@ class Level:
         else:
             for sprite in self.all_sprites.sprites():
                 sprite.draw = True
+
+        if self.shop_active:
+            self.menu.update()
+        else:
+            self.all_sprites.update(dt, self.all_sprites.offset)
+            self.plant_collision()
 
 
 class Camera(pygame.sprite.Group):

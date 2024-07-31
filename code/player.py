@@ -65,6 +65,11 @@ class Player(pygame.sprite.Sprite):
 
         self.toggle_shop = toggle_shop
 
+        self.money = 200
+
+        self.watering = pygame.mixer.Sound(BASE_PATH + 'audio/water.mp3')
+        self.watering.set_volume(0.1)
+
     def use_tool(self):
         if self.selected_tool == "hoe":
             self.soil_layer.get_hit(self.target_pos)
@@ -74,6 +79,7 @@ class Player(pygame.sprite.Sprite):
                     tree.damage()
         elif self.selected_tool == "water":
             self.soil_layer.water(self.target_pos)
+            self.watering.play()
 
     def use_seed(self):
         if self.seed_inventory[self.selected_seed] > 0:

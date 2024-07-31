@@ -42,6 +42,13 @@ class Level:
         self.menu = Menu(self.player, self.player.toggle_shop)
         self.shop_active = False
 
+        self.music = pygame.mixer.Sound(BASE_PATH + 'audio/bg.mp3')
+        self.music.set_volume(0.1)
+        self.music.play(-1)
+
+        self.success = pygame.mixer.Sound(BASE_PATH + 'audio/success.wav')
+        self.success.set_volume(0.1)
+
     # noinspection PyTypeChecker
     def setup(self):
         tmx_data = load_pygame(BASE_PATH + 'data/map.tmx', self.all_sprites)
@@ -100,6 +107,7 @@ class Level:
             Water((x * TILE_SIZE, y * TILE_SIZE), water_frames, (self.all_sprites,))
 
     def player_add(self, item):
+        self.success.play()
         self.player.item_inventory[item] += 1
 
     def toggle_shop(self):

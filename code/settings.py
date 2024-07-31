@@ -10,7 +10,9 @@ print(BASE_PATH)
 
 OVERLAY_POSITIONS = {
 	'tool': (40, SCREEN_HEIGHT - 15),
-	'seed': (100, SCREEN_HEIGHT - 15)}
+	'seed': (100, SCREEN_HEIGHT - 15),
+	'money': (30, 50),
+}
 
 PLAYER_TOOL_OFFSET = {
 	'left': Vector2(-50, 40),

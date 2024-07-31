@@ -65,16 +65,17 @@ class Menu:
         if keys[pygame.K_ESCAPE]:
             self.toggle_menu()
 
-        if keys[pygame.K_SPACE]:
+        if keys[pygame.K_SPACE] and not self.timer.active:
             current_item = self.options[self.index]
 
             if self.index <= self.sell_border:
                 if self.player.item_inventory[current_item] > 0:
                     self.player.item_inventory[current_item] -= 1
                     self.player.money += SALE_PRICES[current_item]
-            else:
+            elif self.player.money >= PURCHASE_PRICES[current_item]:
                 seed_price = PURCHASE_PRICES[current_item]
                 self.player.money -= PURCHASE_PRICES[current_item]
+            self.timer.activate()
 
         num = int(not self.timer.active) * (int(keys[pygame.K_DOWN]) - int(keys[pygame.K_UP]))
 
@@ -101,7 +102,9 @@ class Menu:
         if selected:
             pygame.draw.rect(self.display_surface, 'black', bg_rect, 4, 4)
             if self.index <= self.sell_border:
-                pygame.draw.rect(self.display_surface, 'orange', self.sell_text.get_rect(), 0, 4)
+                sell_rect = self.sell_text.get_rect(
+                    midleft=((SCREEN_WIDTH / 2 - self.buy_text.get_width() / 2) + 50, bg_rect.centery))
+                pygame.draw.rect(self.display_surface, 'orange', sell_rect, 0, 4)
                 self.display_surface.blit(self.sell_text, ((SCREEN_WIDTH / 2 - self.sell_text.get_width() / 2) + 50, bg_rect.centery - 15))
             else:
                 buy_rect = self.buy_text.get_rect(midleft=((SCREEN_WIDTH / 2 - self.buy_text.get_width() / 2) + 50, bg_rect.centery))
